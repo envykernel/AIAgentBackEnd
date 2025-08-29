@@ -1,0 +1,12 @@
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/bin/Debug/net8.0/Domain.deps.json
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/bin/Debug/net8.0/Domain.dll
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/bin/Debug/net8.0/Domain.pdb
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.GeneratedMSBuildEditorConfig.editorconfig
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.AssemblyInfoInputs.cache
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.AssemblyInfo.cs
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.csproj.CoreCompileInputs.cache
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.dll
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/refint/Domain.dll
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.pdb
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/ref/Domain.dll
+/home/mohammed.bensaid@cdbdx.biz/Documents/NewDevCastel/AIAgentsProjects/MultiAgentsBeta/Domain/obj/Debug/net8.0/Domain.csproj.AssemblyReference.cache
