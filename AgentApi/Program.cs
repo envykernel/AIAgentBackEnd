@@ -8,32 +8,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS policy for frontend
+// Add CORS policy to allow all websites
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-        
-        if (allowedOrigins != null && allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
-        else
-        {
-            // Fallback to common development ports
-            policy.WithOrigins(
-                    "http://localhost:5174", "https://localhost:5174",
-                    "http://localhost:3000", "https://localhost:3000",
-                    "http://localhost:4200", "https://localhost:4200"
-                  )
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+        // Note: AllowCredentials() cannot be used with AllowAnyOrigin()
+        // If you need credentials, you must specify specific origins
     });
 });
 
@@ -52,7 +36,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Enable CORS - must be called before UseRouting and UseEndpoints
-app.UseCors("AllowFrontend");
+app.UseCors("AllowAll");
 
 app.MapControllers();
 
