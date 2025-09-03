@@ -9,19 +9,15 @@ namespace Infrastructure.Services;
 
 public class AzureAgentFactory : IAzureAgentFactory
 {
-    private readonly AzureConfiguration _azureConfig;
-
-    public AzureAgentFactory(IOptions<AzureConfiguration> azureConfig)
-    {
-        _azureConfig = azureConfig.Value;
-    }
-
     public async Task<AzureAIAgent> GetAgentById(string id)
     {
-            var credential = new DefaultAzureCredential();
-            PersistentAgentsClient client = AzureAIAgent.CreateAgentsClient(_azureConfig.AgentEndpoint, credential);
-            PersistentAgent definition = await client.Administration.GetAgentAsync(id);
-            AzureAIAgent agent = new(definition, client);
-            return agent;
+        // Get agent endpoint from environment variable like in KernelFactory
+        string agentEndpoint = Environment.GetEnvironmentVariable("AZURE_AGENT_ENDPOINT") ?? throw new ArgumentNullException("AZURE_AGENT_ENDPOINT");
+        
+        var credential = new DefaultAzureCredential();
+        PersistentAgentsClient client = AzureAIAgent.CreateAgentsClient(agentEndpoint, credential);
+        PersistentAgent definition = await client.Administration.GetAgentAsync(id);
+        AzureAIAgent agent = new(definition, client);
+        return agent;
     }
 }

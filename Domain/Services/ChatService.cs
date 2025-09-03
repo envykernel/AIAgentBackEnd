@@ -19,7 +19,6 @@ public class ChatService : IChatService
     private readonly IConversationSummaryRepository _summaryRepository;
     private readonly IAzureAgentFactory _azureAgentFactory;
     private readonly AzureAIAgent _SAVAgent;
-    private readonly Kernel _kernel;
 
     public ChatService(
         IChatSessionRepository sessionRepository,
@@ -33,8 +32,11 @@ public class ChatService : IChatService
         _messageRepository = messageRepository;
         _summaryRepository = summaryRepository;
         _azureAgentFactory = azureAgentFactory;
-        _SAVAgent = _azureAgentFactory.GetAgentById(azureConfiguration.SAVAgentId).Result;
-        _kernel = kernelFactory.CreateKernel();
+        
+        // Get agent ID from environment variable like in KernelFactory
+        string agentId = Environment.GetEnvironmentVariable("AZURE_AGENT_ID") ?? throw new ArgumentNullException("AZURE_AGENT_ID");
+        _SAVAgent = _azureAgentFactory.GetAgentById(agentId).Result;
+    
     }
 
     public async Task<ChatSession> CreateSessionAsync()

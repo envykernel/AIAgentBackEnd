@@ -2,6 +2,9 @@ using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure environment variables support
+builder.Configuration.AddEnvironmentVariables();
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddControllers();
