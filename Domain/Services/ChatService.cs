@@ -18,7 +18,7 @@ public class ChatService : IChatService
     private readonly IMessageRepository _messageRepository;
     private readonly IConversationSummaryRepository _summaryRepository;
     private readonly IAzureAgentFactory _azureAgentFactory;
-    private readonly AzureAIAgent _SAVAgent;
+    private readonly AzureAIAgent masterAgent;
     private readonly Kernel _kernel;
 
     public ChatService(
@@ -33,7 +33,7 @@ public class ChatService : IChatService
         _messageRepository = messageRepository;
         _summaryRepository = summaryRepository;
         _azureAgentFactory = azureAgentFactory;
-        _SAVAgent = _azureAgentFactory.GetAgentById(azureConfiguration.SAVAgentId).Result;
+        masterAgent = _azureAgentFactory.GetAgentById(azureConfiguration.SAVAgentId).Result;
         _kernel = kernelFactory.CreateKernel();
     }
 
@@ -114,8 +114,9 @@ public class ChatService : IChatService
     {
         // Create ThreadMessageOptions from conversation
         var threadMessages = CreateThreadMessageOptionsFromConversation(conversation);
+     
         
-        AzureAIAgentThread thread = new(client: _SAVAgent.Client, messages: threadMessages);
+        AzureAIAgentThread thread = new(client: masterAgent.Client, messages: threadMessages);
         try
         {
             // Generate the agent response(s)
@@ -123,7 +124,7 @@ public class ChatService : IChatService
             Console.WriteLine($"Generating agent response for message: {lastUserMessage}");
             Console.WriteLine($"Thread messages count: {threadMessages.Count}");
             
-            await foreach (ChatMessageContent response in _SAVAgent.InvokeAsync(new ChatMessageContent(AuthorRole.User, lastUserMessage), thread))
+            await foreach (ChatMessageContent response in masterAgent.InvokeAsync(new ChatMessageContent(AuthorRole.User, lastUserMessage), thread))
             {
                 var tokenCount = ExtractTotalTokenCount(response);
                 
