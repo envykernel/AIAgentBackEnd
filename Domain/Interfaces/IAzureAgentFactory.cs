@@ -1,9 +1,10 @@
 
 using Microsoft.SemanticKernel.Agents.AzureAI;
+using Domain.DTOs;
 
 namespace Domain.Interfaces;
 
 public interface IAzureAgentFactory
 {
-    Task<AzureAIAgent> GetAgentById(string id);
+    Task<AgentWithClient> GetAgentById(string id);
 }

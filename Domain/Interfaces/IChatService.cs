@@ -11,5 +11,5 @@ public interface IChatService
     int EstimateTokenCount(string text);
     Task<ChatSession?> GetActiveSessionAsync(string sessionId);
     Task<bool> DeactivateSessionAsync(string sessionId);
-    Task<AgentResponse> GenerateAgentResponseAsync(IEnumerable<Message> conversation);
+    Task<AgentResponse> GenerateAgentResponseAsync(IEnumerable<Message> conversation, string? agentThreadId = null);
 }

@@ -22,7 +22,7 @@ public static class DependencyInjection
         services.AddSingleton<MongoDbClient>();
         
         // Kernel Factory
-        services.AddSingleton<IKernelFactory, KernelFactory>();
+        services.AddSingleton<IKernelFactory, KernelBuilder>();
         
         // Repositories
         services.AddScoped<IChatSessionRepository, ChatSessionRepository>();

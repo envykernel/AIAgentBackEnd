@@ -6,6 +6,9 @@ using Microsoft.SemanticKernel.Agents.AzureAI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Azure.AI.Agents.Persistent;
+using Microsoft.SemanticKernel.Agents;
+using System.Net.Mail;
+
 
 namespace Domain.Services;
 
@@ -18,8 +21,13 @@ public class ChatService : IChatService
     private readonly IMessageRepository _messageRepository;
     private readonly IConversationSummaryRepository _summaryRepository;
     private readonly IAzureAgentFactory _azureAgentFactory;
+    private readonly PersistentAgentsClient persistentAgentsClient;
     private readonly AzureAIAgent masterAgent;
     private readonly Kernel _kernel;
+
+     private const string TranslatorName = "NumeroTranslator";
+    private const string TranslatorInstructions = "Add one to latest user number and spell it in spanish without explanation.";
+
 
     public ChatService(
         IChatSessionRepository sessionRepository,
@@ -33,7 +41,9 @@ public class ChatService : IChatService
         _messageRepository = messageRepository;
         _summaryRepository = summaryRepository;
         _azureAgentFactory = azureAgentFactory;
-        masterAgent = _azureAgentFactory.GetAgentById(azureConfiguration.SAVAgentId).Result;
+        var agentWithClient =   _azureAgentFactory.GetAgentById(azureConfiguration.SAVAgentId).Result;
+        persistentAgentsClient = agentWithClient.Client;
+        masterAgent = agentWithClient.Agent;
         _kernel = kernelFactory.CreateKernel();
     }
 
@@ -110,22 +120,79 @@ public class ChatService : IChatService
 
 
 
-    public async Task<AgentResponse> GenerateAgentResponseAsync(IEnumerable<Message> conversation)
+    public async Task<AgentResponse> GenerateAgentResponseAsync(IEnumerable<Message> conversation, string? agentThreadId = null)
     {
-        // Create ThreadMessageOptions from conversation
-        var threadMessages = CreateThreadMessageOptionsFromConversation(conversation);
-     
-        
-        AzureAIAgentThread thread = new(client: masterAgent.Client, messages: threadMessages);
+        // Create ChatHistory from conversation store in mongo db
+        var chatHistory = CreateChatHistoryFromConversation(conversation);
+        var reducer = new ChatHistoryTruncationReducer(targetCount: 2);
+        // Reduce the chat history
+        var reducedMessages = await reducer.ReduceAsync(chatHistory);
+
+
+  
+        AzureAIAgentThread thread;
+
+        if(agentThreadId is not null)
+        {
+          var messages =  masterAgent.Client.Messages.GetMessages(threadId: agentThreadId, order:ListSortOrder.Ascending);
+          foreach(var message in messages)
+          {
+            foreach(var messageContent in message.ContentItems)
+            {
+               switch(messageContent)
+               {
+                case MessageTextContent textTem:
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.WriteLine($"[{message.Role}] {textTem.Text}");
+                    Console.ResetColor();
+                    break;
+                
+               }
+            }
+          }
+        }
+   
+
+       if(reducedMessages is not null)
+        {
+         var reducedThreadMessages = ConvertChatHistoryToThreadMessageOptions(reducedMessages);
+         thread = new AzureAIAgentThread(client: masterAgent.Client, messages: reducedThreadMessages);
+
+         Console.WriteLine("We use reduced thread messages");
+         Console.WriteLine($"Reduced thread messages count: {reducedThreadMessages.Count}");
+
+        }
+        else
+        {
+         // Create ThreadMessageOptions from conversation
+         var threadMessages = CreateThreadMessageOptionsFromConversation(conversation);
+         thread = new AzureAIAgentThread(client: masterAgent.Client, messages: threadMessages);
+         Console.WriteLine("We use full thread messages");
+         Console.WriteLine($"Full thread messages count: {threadMessages.Count}");
+
+        }
+
+
+
         try
         {
             // Generate the agent response(s)
             var lastUserMessage = conversation.LastOrDefault(m => m.Role == Entities.MessageRole.User)?.Content ?? "Hello";
             Console.WriteLine($"Generating agent response for message: {lastUserMessage}");
-            Console.WriteLine($"Thread messages count: {threadMessages.Count}");
+           
+            
             
             await foreach (ChatMessageContent response in masterAgent.InvokeAsync(new ChatMessageContent(AuthorRole.User, lastUserMessage), thread))
             {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Thread id*: " + thread.Id);
+                Console.ResetColor();
+
+               var  getedThread = await masterAgent.Client.Threads.GetThreadAsync(thread.Id, CancellationToken.None);
+               Console.ForegroundColor = ConsoleColor.Red;
+               Console.WriteLine("Geted thread id: " + getedThread.Value.Id);
+               Console.ResetColor();
+
                 var tokenCount = ExtractTotalTokenCount(response);
                 
                 Console.WriteLine($"Agent response received: {response.Content}");
@@ -155,7 +222,7 @@ public class ChatService : IChatService
         }
         finally
         {
-            await thread.DeleteAsync();
+          //  await thread.DeleteAsync();
         }
     }
 
@@ -248,4 +315,38 @@ public class ChatService : IChatService
         
         return 0;
     }
+
+     private ChatCompletionAgent CreateTruncatingAgent(int reducerMessageCount, int reducerThresholdCount, bool useChatClient) 
+     {
+        return new()
+        {
+            Name = TranslatorName,
+            Instructions = TranslatorInstructions,
+            Kernel = _kernel,
+            HistoryReducer = new ChatHistoryTruncationReducer(reducerMessageCount, reducerThresholdCount),
+        };
+     }
+
+     private List<ThreadMessageOptions> ConvertChatHistoryToThreadMessageOptions(IEnumerable<ChatMessageContent> messages)
+     {
+        var threadMessages = new List<ThreadMessageOptions>();
+        
+        foreach (var message in messages)
+        {
+            Console.WriteLine($"Message: {message.Content} - Role: {message.Role}");
+            var role = message.Role.ToString() switch
+            {
+                "User" => Azure.AI.Agents.Persistent.MessageRole.User,
+                "Assistant" => Azure.AI.Agents.Persistent.MessageRole.Agent,
+                "System" => Azure.AI.Agents.Persistent.MessageRole.Agent,
+                _ => Azure.AI.Agents.Persistent.MessageRole.Agent
+            };
+            
+            threadMessages.Add(new ThreadMessageOptions(role: role, content: message.Content));
+        }
+        
+        return threadMessages;
+     }
+       
+
 }

@@ -2,16 +2,20 @@ using Domain.DTOs;
 using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Services;
+using Domain.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Domain.Handlers;
 
 public class ChatCommandHandler : IChatCommandHandler
 {
     private readonly IChatService _chatService;
+    private readonly AzureConfiguration _azureConfig;
 
-    public ChatCommandHandler(IChatService chatService)
+    public ChatCommandHandler(IChatService chatService, IOptions<AzureConfiguration> azureConfig)
     {
         _chatService = chatService;
+        _azureConfig = azureConfig.Value;
     }
 
     public async Task<ChatResponse> HandleAsync(ChatRequest request)
@@ -40,7 +44,8 @@ public class ChatCommandHandler : IChatCommandHandler
         
         // Get conversation context and generate agent response
         var conversation = await _chatService.GetConversationAsync(session.Id);
-        var agentResponse = await _chatService.GenerateAgentResponseAsync(conversation);
+        var agentThreadId = string.IsNullOrEmpty(request.AgentThreadId) ? _azureConfig.DefaultAgentThreadId : request.AgentThreadId;
+        var agentResponse = await _chatService.GenerateAgentResponseAsync(conversation, agentThreadId);
 
         var (agentMessage, finalSession) = await _chatService.SendMessageAsync(session.Id, agentResponse.Content, MessageRole.Assistant, agentResponse.TokenCount);
         
